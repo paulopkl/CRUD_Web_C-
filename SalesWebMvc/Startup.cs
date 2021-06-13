@@ -12,17 +12,22 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SalesWebMvc.Data;
 
-namespace SalesWebMvc {
-    public class Startup {
+namespace SalesWebMvc
+{
+    public class Startup
+    {
         public IConfiguration Configuration { get; }
 
-        public Startup(IConfiguration configuration) {
+        public Startup(IConfiguration configuration)
+        {
             this.Configuration = configuration;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services) {
-            services.Configure<CookiePolicyOptions>(options => {
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.Configure<CookiePolicyOptions>(options =>
+            {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = SameSiteMode.None;
@@ -30,26 +35,34 @@ namespace SalesWebMvc {
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
-            services.AddDbContext<SalesWebMvcContext>(options => 
-                options.UseMySql(Configuration.GetConnectionString("SalesWebMvcContext"), 
+            services.AddDbContext<SalesWebMvcContext>(options =>
+                options.UseMySql(Configuration.GetConnectionString("SalesWebMvcContext"),
                 builder => builder.MigrationsAssembly("SalesWebMvc")) // MigrationsAssembly([Nome do Projeto])
             );
+
+            services.AddScoped<SeedingService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
-            if (env.IsDevelopment()) {
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, SeedingService seedingService)
+        {
+            if(env.IsDevelopment())
+            {
                 app.UseDeveloperExceptionPage();
-            } else {
+                seedingService.Seed();
+            }
+            else
+            {
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection(); 
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
-            app.UseMvc(routes => {
+            app.UseMvc(routes =>
+            {
                 routes.MapRoute(
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
