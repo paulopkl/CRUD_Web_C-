@@ -2,8 +2,10 @@
 using SalesWebMvc.Models;
 using SalesWebMvc.Models.ViewModels;
 using SalesWebMvc.Services;
+using SalesWebMvc.Services.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -45,13 +47,13 @@ namespace SalesWebMvc.Controllers
         {
             if(id == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { Message = "Id not provided!" });
             }
 
             Seller obj = this._sellerService.FindById(id.Value);
             if(obj == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { Message = "Id not found!" });
             }
 
             return View(obj);
@@ -63,6 +65,80 @@ namespace SalesWebMvc.Controllers
         {
             this._sellerService.Remove(id);
             return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult Details(int? id)
+        {
+            if(id == null)
+            {
+                return RedirectToAction(nameof(Error), new { Message = "Id not provided!" });
+            }
+
+            Seller obj = this._sellerService.FindById(id.Value);
+            if(obj == null)
+            {
+                return RedirectToAction(nameof(Error), new { Message = "Id not found!" });
+            }
+
+            return View(obj);
+        }
+
+        public IActionResult Edit(int? id)
+        {
+            if(id == null)
+            {
+                return RedirectToAction(nameof(Error), new { Message = "Id not provided!" });
+            }
+
+            Seller obj = this._sellerService.FindById(id.Value);
+
+            if(obj == null)
+            {
+                return RedirectToAction(nameof(Error), new { Message = "Id not found!" });
+            }
+
+            List<Department> departments = this._departmentService.FindAll();
+            SellerFormViewModel viewModel = new SellerFormViewModel { Seller = obj, Departments = departments };
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, Seller seller)
+        {
+            if(id != seller.Id)
+            {
+                return RedirectToAction(nameof(Error), new { Message = "Id mismatch" });
+            }
+
+            try
+            {
+                this._sellerService.Update(seller);
+                return RedirectToAction(nameof(Index));
+            }
+            catch(ApplicationException err)
+            {
+                return RedirectToAction(nameof(Error), new { Message = err.Message });
+            }
+            //catch (NotFoundException err)
+            //{
+            //    return RedirectToAction(nameof(Error), new { Message = err.Message });
+            //}
+            //catch (DbConcurrencyException err)
+            //{
+            //    return RedirectToAction(nameof(Error), new { Message = err.Message });
+            //}
+        }
+
+        public IActionResult Error(string message)
+        {
+            ErrorViewModel viewModel = new ErrorViewModel 
+            { 
+                Message = message, 
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            };
+
+            return View(viewModel);
         }
     }
 }
