@@ -31,14 +31,22 @@ namespace SalesWebMvc.Services
 
         public async Task<Seller> FindByIdAsync(int id)
         {
-            return await this._context.Seller.Include(obj => obj.Department).FirstOrDefaultAsync(obj => obj.Id == id);
+            return await this._context.Seller.Include(obj => obj.Department)
+                .FirstOrDefaultAsync(obj => obj.Id == id);
         }
 
         public async Task RemoveAsync(int id)
         {
-            Seller obj = await this._context.Seller.FindAsync(id);
-            this._context.Seller.Remove(obj);
-            await this._context.SaveChangesAsync();
+            try
+            {
+                Seller obj = await this._context.Seller.FindAsync(id);
+                this._context.Seller.Remove(obj);
+                await this._context.SaveChangesAsync();
+            }
+            catch(DbUpdateException err)
+            {
+                throw new IntegrityException(err.Message);
+            }
         }
 
         public async Task UpdateAsync(Seller obj)
